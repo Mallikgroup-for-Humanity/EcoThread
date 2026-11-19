@@ -277,8 +277,8 @@ for idx in range(len(names)):
       // 1. Detect simple for-loop appending to a list: items = [] 
  for x in iter: 
    items.append(expr)
-      const appendLoopRegex = /([a-zA-Z_]\w*)\s*=\s*\[\s*\]\s*
-([ 	]*)for\s+([a-zA-Z_]\w*)\s+in\s+([^
+      const appendLoopRegex = /([a-zA-Z_\\w]*)\s*=\s*\[\s*\]\s*
+([ 	]*)for\s+([a-zA-Z_\\w]*)\s+in\s+([^
 :]+):\s*
 ([ 	]+)\.append\(([^
 ]+)\)/g;
@@ -290,7 +290,7 @@ for idx in range(len(names)):
       });
 
       // 2. Detect range(len(x)) indexing
-      const rangeLenRegex = /for\s+([a-zA-Z_]\w*)\s+in\s+range\(len\(([a-zA-Z_]\w*)\)\)\s*:/g;
+      const rangeLenRegex = /for\s+([a-zA-Z_\\w]*)\s+in\s+range\(len\(([a-zA-Z_\\w]*)\)\)\s*:/g;
       if (rangeLenRegex.test(out)) {
         findings.push("Detected range(len(...)) indexing pattern—prefer iterating directly or using enumerate() to avoid index lookups.");
         penalties += 8;
