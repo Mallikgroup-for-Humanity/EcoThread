@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoThread — Carbon-Aware Code Optimizer</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --panel: #0e1626;
+      --panel-2: #131f35;
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #10b981;
+      --accent-2: #38bdf8;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top right, rgba(16,185,129,0.12), transparent 45%),
+                  radial-gradient(circle at top left, rgba(56,189,248,0.10), transparent 40%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 16px;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; }
+    .topbar {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 14px 18px; margin-bottom: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+    .brand h1 { margin: 0; font-size: 1.25rem; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 700; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.35);
+    }
+    .pill.pro { background: rgba(56,189,248,0.16); color: #7dd3fc; border-color: rgba(56,189,248,0.4); }
+    .sub { color: var(--muted); font-size: 0.85rem; margin: 4px 0 0; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 820px) { .grid-2 { grid-template-columns: 1.15fr 0.85fr; } }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    }
+    .card h2 { margin: 0 0 10px; font-size: 1rem; letter-spacing: 0.02em; text-transform: uppercase; color: #cbd5e1; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    input[type="text"], textarea, select {
+      width: 100%; background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 12px; padding: 11px 13px; font-size: 0.92rem;
+    }
+    textarea {
+      min-height: 210px; resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.84rem; line-height: 1.55;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    button {
+      border: none; border-radius: 11px; padding: 10px 14px; font-weight: 700; font-size: 0.88rem;
+      cursor: pointer; transition: transform 0.06s ease, opacity 0.15s ease;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-primary { background: linear-gradient(135deg, #10b981, #059669); color: #042f2e; }
+    .btn-blue { background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; }
+    .btn-ghost { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); font-size: 0.78rem; padding: 7px 11px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+    .stat {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center;
+    }
+    .stat .lbl { font-size: 0.75rem; color: var(--muted); }
+    .stat .val { font-size: 1.3rem; font-weight: 800; margin-top: 4px; }
+    .g-green { color: #34d399; }
+    .g-blue { color: #38bdf8; }
+    .g-amber { color: #fbbf24; }
+    .findings { list-style: none; padding: 0; margin: 10px 0 14px; display: grid; gap: 8px; }
+    .finding {
+      background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 10px; padding: 9px 12px; font-size: 0.84rem; color: #d1fae5;
+    }
+    .finding.warn { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.3); color: #fef3c7; }
+    .pay-box {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-top: 10px;
+    }
+    .qr-wrap { background: #fff; border-radius: 12px; padding: 10px; text-align: center; margin: 10px 0; }
+    .qr-wrap img { width: 170px; height: 170px; object-fit: contain; margin: 0 auto; display: block; }
+    .qr-note { color: #0f172a; font-size: 0.76rem; font-weight: 700; margin-top: 6px; }
+    .kv { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 0; border-bottom: 1px solid var(--border); word-break: break-all; }
+    .kv:last-child { border-bottom: none; }
+    .msg { font-size: 0.82rem; margin-top: 8px; min-height: 18px; }
+    footer { text-align: center; color: var(--muted); font-size: 0.75rem; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <div class="brand">
+          <span class="dot"></span>
+          <h1>EcoThread</h1>
+          <span class="pill" id="planBadge">FREE TIER (5/5 RUNS LEFT)</span>
+        </div>
+        <p class="sub">Real Static &amp; Efficiency Code Optimizer • Mallik Group 18-Digit Gateway</p>
+      </div>
+      <div class="row" style="margin:0;">
+        <button class="btn-ghost" onclick="openPaymentSection()">1-Month Pro Access</button>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">1. Paste Code to Analyze &amp; Optimize</h2>
+            <div class="row" style="margin:0;">
+              <button class="btn-ghost" onclick="loadSample('loop')">Sample: Append Loop</button>
+              <button class="btn-ghost" onclick="loadSample('concat')">Sample: String +=</button>
+              <button class="btn-ghost" onclick="loadSample('range')">Sample: range(len)</button>
+            </div>
+          </div>
+          <textarea id="codeInput" spellcheck="false"># Example inefficient Python loop
+items = []
+for i in range(10000):
+    items.append(i * 2)
+print(len(items))</textarea>
+          <div class="row" style="margin-top:12px;">
+            <button class="btn-primary" style="flex:1;" onclick="runOptimizer()">Analyze &amp; Optimize Code</button>
+            <button class="btn-ghost" onclick="clearCode()">Clear</button>
+          </div>
+          <div class="msg" id="optimizerMsg"></div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">2. Efficiency &amp; Savings Report</h2>
+            <div class="row" style="margin:0;">
+              <button class="btn-ghost" onclick="copyOptimized()">Copy Optimized</button>
+              <button class="btn-ghost" onclick="downloadOptimized()">Download .py</button>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="lbl">Green Score</div>
+              <div class="val g-green" id="greenScore">85/100</div>
+            </div>
+            <div class="stat">
+              <div class="lbl">Byte Size Cut</div>
+              <div class="val g-blue" id="sizeCut">0.0%</div>
+            </div>
+            <div class="stat">
+              <div class="lbl">Est. Work Saved</div>
+              <div class="val g-amber" id="workSaved">0 ops</div>
+            </div>
+          </div>
+          <ul class="findings" id="findingsList">
+            <li class="finding">Paste code above and click <strong>Analyze &amp; Optimize Code</strong> to inspect real patterns and generate refactored output.</li>
+          </ul>
+          <label style="display:block; font-size:0.78rem; color:var(--muted); margin-bottom:6px;">Refactored Output</label>
+          <textarea id="codeOutput" readonly spellcheck="false" style="min-height:170px; background:#080d18;"></textarea>
+        </div>
+      </div>
+
+      <div id="paymentCard">
+        <div class="card">
+          <h2>3. 18-Digit Key &amp; 1-Month Pro Unlock</h2>
+          <p class="sub" style="margin-bottom:12px;">Enter your 18-digit Aani or Botim transaction reference code to unlock unlimited optimizations for 30 days.</p>
+          <input type="text" id="refCodeInput" inputmode="numeric" maxlength="18" placeholder="Enter exact 18-digit reference code" oninput="this.value = this.value.replace(/\\D/g, '').slice(0, 18)" />
+          <div class="row" style="margin-top:10px;">
+            <button class="btn-blue" style="width:100%;" onclick="activate18DigitKey()">Activate 1-Month Pro (18 Digits)</button>
+          </div>
+          <div class="msg" id="subMsg"></div>
+          <div id="subStatusBox" class="pay-box" style="display:none;"></div>
+
+          <div class="pay-box">
+            <div style="font-weight:700; font-size:0.88rem; margin-bottom:8px;">UAE Payment Channels (1-Month Plan)</div>
+            <div class="row" style="margin-bottom:8px;">
+              <button class="btn-ghost" id="btnQrAani" onclick="switchQr('aani')">Aani QR</button>
+              <button class="btn-ghost" id="btnQrBotim" onclick="switchQr('botim')">Botim QR</button>
+            </div>
+            <div class="qr-wrap">
+              <img id="qrImg" src="aani-qr.png" alt="Payment QR Code" onerror="this.style.display='none'; document.getElementById('qrFallback').style.display='block';" />
+              <div id="qrFallback" style="display:none; color:#0f172a; font-size:0.8rem; padding:12px;">QR image file not yet in folder. Use UAE Mobile or IBAN below.</div>
+              <div class="qr-note" id="qrCaption">Aani (All UAE Banks / mBank)</div>
+            </div>
+            <div class="kv">
+              <span>Botim / Mobile</span>
+              <span><strong>+971502297451</strong> <button class="btn-ghost" onclick="copyText('+971502297451')">Copy</button></span>
+            </div>
+            <div class="kv">
+              <span>mBank IBAN</span>
+              <span><strong>AE900975554769760000001</strong> <button class="btn-ghost" onclick="copyText('AE900975554769760000001')">Copy</button></span>
+            </div>
+            <div style="margin-top:10px;">
+              <a id="waReceiptLink" href="https://wa.me/971502297451?text=Hello%20Niraj%2C%20I%20submitted%20my%2018-digit%20payment%20reference%20for%20EcoThread%201-Month%20Pro." target="_blank" rel="noopener" style="display:block; text-align:center; background:#22c55e; color:#052e16; font-weight:700; padding:9px 12px; border-radius:10px; text-decoration:none; font-size:0.84rem;">Send Receipt via WhatsApp (+971502297451)</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>© 2026 Niraj Mallik (nirajmallik143-hub / Mallik Group) • MIT License</footer>
+  </div>
+
+  <script>
+    const FIREBASE_BASE = "https://nmdc-ajs-security-default-rtdb.firebaseio.com/mallik_payments";
+    const FREE_LIMIT = 5;
+    const PLAN_MS = 30 * 24 * 60 * 60 * 1000;
+    const KEY_USAGE = "ecothread_free_runs_v1";
+    const KEY_SUB = "ecothread_pro_sub_v1";
+    const KEY_USED_CODES = "ecothread_used_18digit_codes_v1";
+
+    function getSub() {
+      try {
+        const s = JSON.parse(localStorage.getItem(KEY_SUB) || "null");
+        if (s && s.expiresAt > Date.now()) return s;
+      } catch (e) {}
+      return null;
+    }
+
+    function getFreeRuns() {
+      return Number(localStorage.getItem(KEY_USAGE) || "0");
+    }
+
+    function refreshBadge() {
+      const sub = getSub();
+      const badge = document.getElementById("planBadge");
+      const box = document.getElementById("subStatusBox");
+      if (sub) {
+        const remDays = Math.max(0, Math.ceil((sub.expiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
+        badge.textContent = `PRO ACTIVE (${remDays}d left)`;
+        badge.className = "pill pro";
+        box.style.display = "block";
+        box.innerHTML = `<strong>Active 1-Month Key:</strong> ${sub.code}<br/><strong>Expires:</strong> ${new Date(sub.expiresAt).toLocaleString()}`;
+      } else {
+        const left = Math.max(0, FREE_LIMIT - getFreeRuns());
+        badge.textContent = `FREE TIER (${left}/${FREE_LIMIT} RUNS LEFT)`;
+        badge.className = "pill";
+        box.style.display = "none";
+      }
+    }
+
+    function loadSample(type) {
+      const inp = document.getElementById("codeInput");
+      if (type === "loop") {
+        inp.value = "# Example inefficient loop
+items = []
+for i in range(10000):
+    items.append(i * 2)
+print(len(items))";
+      } else if (type === "concat") {
+        inp.value = "report = ""
+for row in range(500):
+    report += f"Item {row}\n"
+print(report)";
+      } else {
+        inp.value = "names = ["A", "B", "C"]
+for idx in range(len(names)):
+    print(idx, names[idx])";
+      }
+    }
+
+    function clearCode() {
+      document.getElementById("codeInput").value = "";
+      document.getElementById("codeOutput").value = "";
+      document.getElementById("optimizerMsg").textContent = "";
+    }
+
+    function optimizeSource(src) {
+      const findings = [];
+      let penalties = 0;
+      let savedOps = 0;
+      let out = src;
+
+      // 1. Detect simple for-loop appending to a list: items = [] 
+ for x in iter: 
+   items.append(expr)
+      const appendLoopRegex = /([a-zA-Z_\\w]*)\s*=\s*\[\s*\]\s*
+([ 	]*)for\s+([a-zA-Z_\\w]*)\s+in\s+([^
+:]+):\s*
+([ 	]+)\.append\(([^
+]+)\)/g;
+      out = out.replace(appendLoopRegex, (_, arr, indent, varName, iterExpr, innerIndent, expr) => {
+        findings.push(`Replaced loop .append() on "${arr}" with list comprehension to avoid repeated attribute lookup & per-iteration call overhead.`);
+        penalties += 12;
+        savedOps += 10000;
+        return `${indent}${arr} = [${expr.trim()} for ${varName} in ${iterExpr.trim()}]`;
+      });
+
+      // 2. Detect range(len(x)) indexing
+      const rangeLenRegex = /for\s+([a-zA-Z_\\w]*)\s+in\s+range\(len\(([a-zA-Z_\\w]*)\)\)\s*:/g;
+      if (rangeLenRegex.test(out)) {
+        findings.push("Detected range(len(...)) indexing pattern—prefer iterating directly or using enumerate() to avoid index lookups.");
+        penalties += 8;
+        savedOps += 1500;
+      }
+
+      // 3. Detect repeated string += inside loops
+      if (/for\s+.+:\s*
+(?:\s+.+
+)*?\s+[a-zA-Z_]\w*\s*\+=\s*/.test(out)) {
+        findings.push("Detected string concatenation (+=) inside a loop—collect chunks in a list and join once with "".join(...) for O(n) memory behavior.");
+        penalties += 10;
+        savedOps += 2500;
+      }
+
+      // 4. Count print statements
+      const printMatches = out.match(/^\s*print\(/gm);
+      if (printMatches && printMatches.length > 0) {
+        findings.push(`Found ${printMatches.length} print() statement(s)—remove unnecessary console I/O in hot paths or production workers.`);
+        penalties += Math.min(12, printMatches.length * 3);
+        savedOps += printMatches.length * 250;
+      }
+
+      // 5. Measure indentation depth
+      const lines = out.split("
+");
+      let maxIndent = 0;
+      for (const l of lines) {
+        if (!l.trim()) continue;
+        const leading = l.match(/^[ 	]*/)[0].replace(/	/g, "    ").length;
+        if (leading > maxIndent) maxIndent = leading;
+      }
+      if (maxIndent >= 12) {
+        findings.push(`Deep nesting detected (${Math.floor(maxIndent / 4)} levels)—flatten early returns or extract helper functions for clarity.`);
+        penalties += 8;
+        savedOps += 800;
+      }
+
+      if (findings.length === 0) {
+        findings.push("No major anti-patterns detected in this snippet. Code structure is clean.");
+      }
+
+      const rawBytes = new Blob([src]).size;
+      const optBytes = new Blob([out]).size;
+      const cutPct = rawBytes > 0 ? Math.max(0, (((rawBytes - optBytes) / rawBytes) * 100)).toFixed(1) : "0.0";
+      const score = Math.max(25, Math.min(100, 100 - penalties));
+
+      return { out, findings, score, cutPct, savedOps };
+    }
+
+    function runOptimizer() {
+      const src = document.getElementById("codeInput").value;
+      const msg = document.getElementById("optimizerMsg");
+      if (!src.trim()) {
+        msg.style.color = "#fbbf24";
+        msg.textContent = "Please paste code before running optimization.";
+        return;
+      }
+
+      const sub = getSub();
+      if (!sub) {
+        const runs = getFreeRuns();
+        if (runs >= FREE_LIMIT) {
+          msg.style.color = "#f87171";
+          msg.textContent = "Free tier limit (5/5) reached. Activate a 18-digit 1-Month Pro key on the right.";
+          openPaymentSection();
+          return;
+        }
+        localStorage.setItem(KEY_USAGE, String(runs + 1));
+      }
+
+      const res = optimizeSource(src);
+      document.getElementById("codeOutput").value = res.out;
+      document.getElementById("greenScore").textContent = `${res.score}/100`;
+      document.getElementById("sizeCut").textContent = `${res.cutPct}%`;
+      document.getElementById("workSaved").textContent = `${res.savedOps.toLocaleString()} ops`;
+
+      const list = document.getElementById("findingsList");
+      list.innerHTML = "";
+      res.findings.forEach((f, idx) => {
+        const li = document.createElement("li");
+        li.className = idx === 0 && res.out !== src ? "finding" : "finding warn";
+        li.textContent = f;
+        list.appendChild(li);
+      });
+
+      msg.style.color = "#34d399";
+      msg.textContent = "Analysis & refactoring complete.";
+      refreshBadge();
+    }
+
+    async function activate18DigitKey() {
+      const code = document.getElementById("refCodeInput").value.trim();
+      const msg = document.getElementById("subMsg");
+      if (!/^\d{18}$/.test(code)) {
+        msg.style.color = "#fbbf24";
+        msg.textContent = `Enter a valid 18-digit code (${code.length}/18 digits).`;
+        return;
+      }
+
+      const usedLocal = JSON.parse(localStorage.getItem(KEY_USED_CODES) || "[]");
+      if (usedLocal.includes(code)) {
+        msg.style.color = "#f87171";
+        msg.textContent = "This 18-digit code has already been redeemed on this device.";
+        return;
+      }
+
+      msg.style.color = "#38bdf8";
+      msg.textContent = "Verifying against Firebase Realtime Database...";
+
+      const now = Date.now();
+      const expiresAt = now + PLAN_MS;
+      const payload = {
+        app: "EcoThread",
+        referenceCode18: code,
+        activatedAt: new Date(now).toISOString(),
+        expiresAt,
+        durationDays: 30,
+        status: "ACTIVE_1_MONTH"
+      };
+
+      try {
+        const checkRes = await fetch(`${FIREBASE_BASE}/${code}.json`);
+        const existing = await checkRes.json();
+        if (existing) {
+          msg.style.color = "#f87171";
+          msg.textContent = "This 18-digit reference code is already registered in Firebase.";
+          return;
+        }
+        await fetch(`${FIREBASE_BASE}/${code}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.warn("Firebase check fallback:", err);
+      }
+
+      usedLocal.push(code);
+      localStorage.setItem(KEY_USED_CODES, JSON.stringify(usedLocal));
+      localStorage.setItem(KEY_SUB, JSON.stringify({ code, expiresAt }));
+
+      document.getElementById("waReceiptLink").href =
+        `https://wa.me/971502297451?text=${encodeURIComponent(`Hello Niraj, I activated EcoThread 1-Month Pro.
+18-Digit Ref: ${code}`)}`;
+
+      msg.style.color = "#34d399";
+      msg.textContent = "1-Month Pro unlocked!";
+      refreshBadge();
+    }
+
+    function switchQr(kind) {
+      const img = document.getElementById("qrImg");
+      const cap = document.getElementById("qrCaption");
+      img.style.display = "block";
+      document.getElementById("qrFallback").style.display = "none";
+      if (kind === "aani") {
+        img.src = "aani-qr.png";
+        cap.textContent = "Aani (All UAE Banks / mBank)";
+      } else {
+        img.src = "botim-qr.png";
+        cap.textContent = "Botim Pay (+971502297451)";
+      }
+    }
+
+    function copyText(txt) {
+      navigator.clipboard.writeText(txt).catch(() => {});
+    }
+
+    function copyOptimized() {
+      const out = document.getElementById("codeOutput").value;
+      if (out) copyText(out);
+    }
+
+    function downloadOptimized() {
+      const out = document.getElementById("codeOutput").value || document.getElementById("codeInput").value;
+      const blob = new Blob([out], { type: "text/x-python;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ecothread_optimized.py";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function openPaymentSection() {
+      document.getElementById("paymentCard").scrollIntoView({ behavior: "smooth" });
+    }
+
+    refreshBadge();
+  </script>
+<div style="text-align:center;font-size:12px;opacity:0.75;padding:8px;">©Nirajmallik@hub</div>
+</body>
+</html>

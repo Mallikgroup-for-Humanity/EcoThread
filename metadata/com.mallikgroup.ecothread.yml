@@ -1,0 +1,30 @@
+Categories:
+  - Development
+License: MIT
+AuthorName: Niraj Mallik
+AuthorEmail: nirajmallik143@gmail.com
+SourceCode: https://github.com/Malikgroup-for-Humanity/EcoThread
+IssueTracker: https://github.com/Malikgroup-for-Humanity/EcoThread/issues
+
+AutoName: EcoThread
+Summary: Static Python code efficiency analyzer and 3D optimizer
+Description: |-
+  EcoThread inspects Python code structures to flag nested loops and performance
+  bottlenecks, estimates efficiency heuristics, and provides an interactive
+  browser and mobile workspace under the 2026 MIT License.
+
+RepoType: git
+Repo: https://github.com/Malikgroup-for-Humanity/EcoThread.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 1
+    commit: v1.0.0
+    subdir: android/app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.0
+CurrentVersionCode: 1
