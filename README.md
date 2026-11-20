@@ -1,52 +1,76 @@
-# EcoThread — Static Code Efficiency Analyzer
+# EcoThread — Python Static Efficiency Review
 
-> Browser-based code analysis and refactoring assistant by Mallik Group for Humanity.
+> A lightweight Python code review tool by Mallik Group for Humanity.
 >
 > **Repository:** <https://github.com/Mallikgroup-for-Humanity/EcoThread>  
-> **Live site:** <https://mallikgroup-for-humanity.github.io/EcoThread/>  
+> **Vercel deployment:** See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment details.  
 > **License:** MIT (see [LICENSE](LICENSE))
 
-## 1. Mission
+## 1D — Mission
 
-EcoThread helps developers spot common sources of avoidable work in everyday code, such as repeated lookups, verbose logging, unbounded queries, and inefficient iteration. It provides static findings and suggested refactoring alongside indicative code-size and work-saved estimates.
+EcoThread highlights possible repeated work in Python source. Its static analyzer flags loops containing nested loops as prompts for developer review. Findings are heuristic: nested loops are not automatically inefficient, and the analyzer does not prove that a change will improve performance.
 
-## 2. Features
+## 2D — Features and architecture
 
-- **Static analysis and refactoring:** Analyze JavaScript/TypeScript, Python, and SQL snippets, with automatic language detection or manual selection.
-- **Efficiency report:** Review a heuristic Green Score, source/output byte counts, estimated work saved, and explanations of detected patterns.
-- **Sample snippets:** Load example code to explore supported checks.
-- **Browser-based usage:** The analyzer runs in the browser and does not require a project backend for its static checks.
+- **AST-based Python review:** Parses Python source and reports nested-loop patterns with line numbers and a heuristic review score.
+- **Command-line interface:** Analyze a local Python file with `main.py`.
+- **Web interface:** Submit Python source to the Flask interface in `api/index.py`; submitted code is parsed, not executed.
+- **Cloudflare Worker API:** The separate Worker provides JSON endpoints for health checks and Python source analysis. See [DEPLOYMENT.md](DEPLOYMENT.md).
+- **Optional emissions estimate:** The CLI can estimate CO₂ savings only when before/after runtimes, assumed or measured power, and grid carbon intensity are all supplied.
 
-## 3. Metrics and limitations
+## 3D — Metrics and limitations
 
-EcoThread's Green Score, byte reduction, and estimated operations saved are heuristic indicators derived from static pattern matches. They are not measurements of runtime, electricity use, or carbon emissions. Validate suggested changes with tests, profilers, and benchmarks before adopting them in production; some transformations require project-specific context.
+The review score is a simple heuristic based on the number of nested-loop findings. It is not a benchmark, runtime measurement, or energy score. Static findings alone cannot establish that an optimization saves energy or emissions.
 
-## 4. Free and Pro modes
+The optional CO₂ estimate uses the supplied runtime difference, power assumption, and grid intensity. Measure comparable runs and document the assumptions; the result is an estimate, not a direct emissions measurement. See `calculate_co2_impact` in `ecothread.py` for the calculation and input validation.
 
-The browser UI provides a free run allowance and a 30-day Pro state. Run counts and Pro state are stored in the browser's `localStorage`, so they are local to that browser and can be cleared or modified by its user.
+## 4D — Run locally
 
-**Important:** Entering a transaction reference in the static site does not verify payment with a financial provider or server. It only changes local browser state. Do not treat this client-side flow as secure entitlement or payment verification.
+Analyze a Python file from the repository root:
 
-For current payment instructions, contact the maintainer privately. Financial account and personal payment details are intentionally not published in this README.
+```bash
+python main.py analyze path/to/file.py
+```
 
-## 5. Repository overview
+To request an indicative CO₂ estimate, provide all four measurement inputs:
 
-- `index.html` — browser-based optimizer interface.
-- `main.py`, `ecothread.py`, and `engine/` — Python analysis and optimization components.
-- `api/` and `worker/` — API and edge-runtime components.
+```bash
+python main.py analyze path/to/file.py \
+  --before-seconds 12.0 \
+  --after-seconds 9.5 \
+  --power-w 45 \
+  --grid-intensity-g-per-kwh 400
+```
+
+The Flask web interface is served by `api/index.py` in the Vercel deployment. For local setup and Worker commands, consult [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## 5D — Deployment
+
+EcoThread has two documented deployment targets:
+
+- **Vercel:** Flask web interface, served by `api/index.py`.
+- **Cloudflare Workers:** Separate Python JSON API with `GET /`, `GET /health`, and `POST /analyze` endpoints.
+
+Follow [DEPLOYMENT.md](DEPLOYMENT.md) for prerequisites, development, and deployment instructions. The Worker limits source input to 64 KiB.
+
+## 6D — Repository guide
+
+- `main.py` — command-line entry point.
+- `ecothread.py` — Python AST analysis and optional CO₂ estimate.
+- `api/index.py` — Flask web interface.
+- `worker/` and `wrangler.jsonc` — Cloudflare Worker API and configuration.
 - `tests/` — automated tests.
-- `DEPLOYMENT.md` — deployment guidance.
+- `DEPLOYMENT.md` — hosting instructions.
+- `requirements.txt` and `pyproject.toml` — runtime and Worker dependency configuration.
 
-## 6. Deployment
+## 7D — Safety and attribution
 
-The repository includes deployment configuration for its supported hosting targets. See [DEPLOYMENT.md](DEPLOYMENT.md) for setup details. The GitHub Pages site serves the static frontend; client-side features do not provide server-side payment verification.
+EcoThread does not execute submitted source in its Flask analysis flow. Review findings and suggested changes before applying them, then use tests and benchmarks appropriate to your project. Do not treat static analysis or estimated emissions as a substitute for measurement.
 
-## 7. Attribution and license
+Maintained by Niraj Mallik and Mallik Group for Humanity. Released under the MIT License; see [LICENSE](LICENSE) for terms.
 
-EcoThread is maintained by Niraj Mallik and Mallik Group for Humanity. It is released under the MIT License; see [LICENSE](LICENSE) for the full text.
+## 8D — Roadmap
 
-## 8. Roadmap
-
-- Expand static rules for additional languages and patterns.
-- Add focused automated checks for deployment and supported frontend behavior.
-- Evaluate analyzer suggestions against representative benchmarks and document their limits.
+- Add carefully tested checks for more Python efficiency patterns.
+- Expand automated coverage for the web and Worker interfaces.
+- Compare analysis suggestions with reproducible benchmarks and document their limits.
