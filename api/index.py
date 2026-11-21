@@ -140,8 +140,8 @@ def api_analyze():
         score, findings = analyze_python_code(code)
     except billing.BillingError as exc:
         return _error(exc)
-    except (SyntaxError, ValueError) as exc:
-        return jsonify(error="Could not parse source: %s" % exc), 422
+    except (SyntaxError, ValueError):
+        return jsonify(error="Could not parse source"), 422
     return jsonify(score=score, findings=findings, plan=info["plan"], remaining_today=info["remaining_today"])
 
 
