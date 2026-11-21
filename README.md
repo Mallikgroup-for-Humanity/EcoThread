@@ -88,3 +88,15 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for setup and deployment instructions. The cu
 Review findings and suggestions before applying them; use project tests and reproducible benchmarks to evaluate changes. Do not treat static findings or estimated emissions as a substitute for measurement. Do not enter payment details into the legacy demo.
 
 Maintained by Niraj Mallik and Mallik Group for Humanity. Released under the MIT License; see [LICENSE](LICENSE) for terms.
+
+## Plans & payments (©Nirajmallik@hub)
+
+| Plan | Price | Daily analyses | Max source |
+|------|-------|----------------|-----------|
+| Trial | free, 14 days | 25 | 16 KB |
+| Pro | $9 / 31 days | 500 | 64 KB |
+| Max | $29 / 31 days | 5000 | 256 KB |
+
+API: `POST /api/trial {"email"}` → API key; `POST /api/analyze {"code"}` and `GET /api/account` with `X-API-Key`; `POST /api/checkout {"plan":"pro|max"}` → Stripe Checkout URL; `POST /api/stripe/webhook` (Stripe `checkout.session.completed`).
+
+Environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_MAX`, `ECOTHREAD_BASE_URL`, `ECOTHREAD_DB` (SQLite path; use persistent storage in production — serverless `/tmp` is ephemeral). Run tests: `python -m unittest discover -s tests`.
