@@ -1,6 +1,12 @@
 # Deployment
 
-EcoThread has two deployment targets. Vercel serves the Flask web interface; Cloudflare Workers serves a lightweight Python JSON API. Both run the same nested-loop heuristic, and the reported CO₂ value is an estimate—not a measurement.
+EcoThread has three deployment targets. GitHub Pages deploys the static root site, Vercel serves the Flask web interface, and Cloudflare Workers serves a lightweight Python JSON API. The reported CO₂ value is an estimate—not a measurement. The current deployments do not include an LLM integration, live carbon-data provider, account system, or payment processor.
+
+## GitHub Pages (static site)
+
+The workflow in `.github/workflows/jekyll-gh-pages.yml` builds the repository root with Jekyll and deploys it to <https://mallikgroup-for-humanity.github.io/EcoThread/>. A push to `main` triggers deployment; the workflow can also be started manually from the GitHub Actions tab.
+
+GitHub Pages only serves static files and does not run the Flask application. The repository's root `index.html` is a standalone legacy demo; the Markdown README is repository documentation, not the deployed Flask interface.
 
 ## Vercel (web interface)
 
